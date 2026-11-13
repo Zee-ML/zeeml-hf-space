@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ZeeML Syntactic Cadence, Burstiness &amp; Data Telemetry Studio</title>
+  <meta name="description" content="Interactive sentence burstiness, Yule's K lexical diversity, readability indices, RFC-4180 JSON-to-CSV flattener, and CGPA calculator powered by ZeeML (zeeml.com)." />
+  <style>
+    :root {
+      --bg: #070b14;
+      --card: #0f172a;
+      --surface: #111c33;
+      --border: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --cyan: #22d3ee;
+      --blue: #1d6bff;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 1.25rem;
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; }
+    .banner { width: 100%; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; }
+    .nav-bar { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-bottom: 1.25rem; }
+    .btn {
+      display: inline-block; padding: 0.55rem 1rem; border-radius: 8px;
+      font-weight: 600; font-size: 0.86rem; text-decoration: none; cursor: pointer; border: 1px solid transparent;
+    }
+    .btn-primary { background: var(--cyan); color: #042f2e; }
+    .btn-secondary { background: var(--card); color: var(--text); border-color: var(--border); }
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.6rem; }
+    .tab-btn {
+      background: var(--card); color: var(--muted); border: 1px solid var(--border);
+      padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer;
+    }
+    .tab-btn.active { background: var(--surface); color: var(--cyan); border-color: var(--cyan); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.15rem; }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; }
+    h2 { font-size: 1.05rem; margin-bottom: 0.65rem; color: #e2e8f0; }
+    textarea, input, select {
+      width: 100%; background: #070b14; color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;
+      font-size: 0.92rem; line-height: 1.5;
+    }
+    textarea { min-height: 210px; resize: vertical; }
+    .preset-row { display: flex; gap: 0.5rem; margin-bottom: 0.65rem; flex-wrap: wrap; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem; margin-bottom: 1rem; }
+    .kpi { background: #070b14; border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem; }
+    .kpi-val { font-size: 1.25rem; font-weight: 700; color: var(--cyan); }
+    .kpi-lbl { font-size: 0.74rem; color: var(--muted); }
+    .bars { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+    .bar-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+    .bar-track { flex: 1; height: 9px; background: #070b14; border-radius: 99px; overflow: hidden; }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+    footer {
+      margin-top: 1.75rem; padding-top: 1.1rem; border-top: 1px solid var(--border);
+      font-size: 0.84rem; color: var(--muted); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem;
+    }
+    footer a { color: var(--cyan); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="https://zeeml.com/ai-humanizer" target="_blank" rel="noopener">
+      <img src="./assets/zeeml-hf-banner.svg" alt="ZeeML Syntactic Cadence &amp; Burstiness Studio" class="banner" />
+    </a>
+    <div class="nav-bar">
+      <a class="btn btn-primary" href="https://zeeml.com/ai-humanizer" target="_blank" rel="noopener">AI Humanizer Studio (zeeml.com)</a>
+      <a class="btn btn-secondary" href="https://zeeml.com/ai-detector" target="_blank" rel="noopener">AI Cadence Detector</a>
+      <a class="btn btn-secondary" href="https://zeeml.com/paraphrasing-tool" target="_blank" rel="noopener">Paraphrasing Tool</a>
+      <a class="btn btn-secondary" href="https://zeeml.com/grammar-checker" target="_blank" rel="noopener">Grammar Checker</a>
+      <a class="btn btn-secondary" href="https://zeeml.com/summarizer" target="_blank" rel="noopener">Text Summarizer</a>
+      <a class="btn btn-secondary" href="https://zeeml.com/word-counter" target="_blank" rel="noopener">Word Counter</a>
+      <a class="btn btn-secondary" href="https://zeeml.com/json-to-csv" target="_blank" rel="noopener">JSON to CSV</a>
+      <a class="btn btn-secondary" href="https://zeeml.com/cgpa-calculator" target="_blank" rel="noopener">CGPA Calculator</a>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" onclick="switchTab('cadence', this)">1. Cadence, Burstiness &amp; Readability</button>
+      <button class="tab-btn" onclick="switchTab('jsoncsv', this)">2. RFC-4180 JSON-to-CSV Sandbox</button>
+      <button class="tab-btn" onclick="switchTab('cgpa', this)">3. Global CGPA &amp; Percentage Solver</button>
+    </div>
+
+    <div id="tab-cadence" class="tab-pane active">
+      <div class="grid">
+        <div class="panel">
+          <h2>Passage Input</h2>
+          <div class="preset-row">
+            <button class="btn btn-secondary" type="button" onclick="loadPreset('human')">Load High-Burstiness Sample</button>
+            <button class="btn btn-secondary" type="button" onclick="loadPreset('flat')">Load Flat Synthetic Sample</button>
+          </div>
+          <textarea id="inputText" aria-label="Passage input">Uniformity gives automated prose away. When our team audited distributed gradient checkpointing across 24 production nodes last quarter, we noticed that naive serialization pipelines waste nearly 31.4 percent of available memory bandwidth on redundant tensor copies. Fixing that bottleneck required a different approach. By pairing deterministic activation recomputation with strict bounds on batch throughput, the engine eliminates memory spikes while keeping tail latency predictable. Direct measurement confirms the gain.</textarea>
+        </div>
+        <div class="panel">
+          <h2>9-Point Quantitative Telemetry</h2>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="kpi-val" id="kpiSd">0.0</div><div class="kpi-lbl">Sentence SD (Words)</div></div>
+            <div class="kpi"><div class="kpi-val" id="kpiCv">0.00</div><div class="kpi-lbl">Burstiness CV</div></div>
+            <div class="kpi"><div class="kpi-val" id="kpiEntropy">0.00</div><div class="kpi-lbl">Shannon Entropy</div></div>
+            <div class="kpi"><div class="kpi-val" id="kpiYule">0.0</div><div class="kpi-lbl">Yule's K Diversity</div></div>
+            <div class="kpi"><div class="kpi-val" id="kpiFk">0.0</div><div class="kpi-lbl">Flesch-Kincaid Grade</div></div>
+            <div class="kpi"><div class="kpi-val" id="kpiBand">Balanced</div><div class="kpi-lbl">Cadence Status</div></div>
+          </div>
+          <h2>Sentence Length Distribution</h2>
+          <div class="bars" id="sentenceBars"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-jsoncsv" class="tab-pane">
+      <div class="grid">
+        <div class="panel">
+          <h2>Nested JSON Input (<a href="https://zeeml.com/json-to-csv" target="_blank" style="color:var(--cyan);">Full Studio at zeeml.com/json-to-csv</a>)</h2>
+          <textarea id="jsonInput">[
+  {"id": "ZML-01", "model": {"name": "Cadence-v1", "burstiness_cv": 0.54}, "verified": true},
+  {"id": "ZML-02", "model": {"name": "Flat-Baseline", "burstiness_cv": 0.14}, "verified": false}
+]</textarea>
+          <button class="btn btn-primary" style="margin-top:0.65rem;" type="button" onclick="convertJsonCsv()">Flatten to RFC-4180 CSV</button>
+        </div>
+        <div class="panel">
+          <h2>RFC-4180 CSV Output</h2>
+          <textarea id="csvOutput" readonly></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-cgpa" class="tab-pane">
+      <div class="panel">
+        <h2>Multi-Scale CGPA to Percentage &amp; 4.0 GPA Normalizer (<a href="https://zeeml.com/cgpa-calculator" target="_blank" style="color:var(--cyan);">Full Calculator at zeeml.com/cgpa-calculator</a>)</h2>
+        <div class="kpi-grid" style="margin-top:0.75rem;">
+          <div>
+            <label style="font-size:0.82rem;color:var(--muted);">10-Point CGPA (0.0 to 10.0)</label>
+            <input type="number" id="cgpaVal" value="8.6" step="0.1" min="0" max="10" oninput="calcCgpa()" />
+          </div>
+          <div>
+            <label style="font-size:0.82rem;color:var(--muted);">University Scale Rule</label>
+            <select id="cgpaScale" onchange="calcCgpa()">
+              <option value="9.5">CBSE / UGC Standard (CGPA * 9.5)</option>
+              <option value="10.0">Direct Decimal (CGPA * 10.0)</option>
+              <option value="aicte">AICTE / VTU Shift ((CGPA - 0.75) * 10)</option>
+            </select>
+          </div>
+          <div class="kpi">
+            <div class="kpi-val" id="cgpaResult">81.70% | 3.27 GPA</div>
+            <div class="kpi-lbl">Equivalent Percentage &amp; 4.0 GPA</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <span>Maintained by <a href="https://zeeml.com" target="_blank" rel="noopener">ZeeML Engineering (zeeml.com)</a></span>
+      <span>
+        <a href="https://zeeml.com/ai-humanizer" target="_blank" rel="noopener">AI Humanizer</a> •
+        <a href="https://zeeml.com/ai-detector" target="_blank" rel="noopener">AI Detector</a> •
+        <a href="https://zeeml.com/pdf-to-word" target="_blank" rel="noopener">PDF to Word</a> •
+        <a href="https://zeeml.com/percentage-calculator" target="_blank" rel="noopener">Percentage Calculator</a>
+      </span>
+    </footer>
+  </div>
+
+  <script>
+    function switchTab(id, btn) {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      btn.classList.add('active');
+    }
+    function loadPreset(mode) {
+      const el = document.getElementById('inputText');
+      if (mode === 'flat') {
+        el.value = "In recent evaluations, distributed gradient checkpointing was analyzed across multiple production clusters to measure overall system stability. During the benchmark phase, tensor memory footprint was recorded at fourteen percent under standard operational workload parameters. Furthermore, activation recomputation was implemented by the engineering team to maintain consistent processing rates across all nodes. Consequently, batch throughput was improved by十八 percent when compared against the previous baseline configuration.";
+      } else {
+        el.value = "Uniformity gives automated prose away. When our team audited distributed gradient checkpointing across 24 production nodes last quarter, we noticed that naive serialization pipelines waste nearly 31.4 percent of available memory bandwidth on redundant tensor copies. Fixing that bottleneck required a different approach. By pairing deterministic activation recomputation with strict bounds on batch throughput, the engine eliminates memory spikes while keeping tail latency predictable. Direct measurement confirms the gain.";
+      }
+      analyze();
+    }
+    function countSyllables(w) {
+      w = w.toLowerCase().replace(/[^a-z]/g, '');
+      if (!w) return 0;
+      if (w.length <= 3) return 1;
+      w = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, '');
+      const m = w.match(/[aeiouy]{1,2}/g);
+      return m ? Math.max(1, m.length) : 1;
+    }
+    function analyze() {
+      const raw = document.getElementById('inputText').value.trim();
+      const sentences = raw.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+      const lengths = sentences.map(s => (s.match(/[A-Za-z0-9']+/g) || []).length).filter(n => n > 0);
+      const words = (raw.toLowerCase().match(/[a-z0-9']+/g) || []);
+      if (!lengths.length || !words.length) return;
+      const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+      const variance = lengths.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / lengths.length;
+      const sd = Math.sqrt(variance);
+      const cv = sd / Math.max(1, mean);
+
+      const freq = {};
+      words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+      let entropy = 0;
+      const total = words.length;
+      const vFreq = {};
+      Object.values(freq).forEach(c => {
+        const p = c / total;
+        entropy -= p * Math.log2(p);
+        vFreq[c] = (vFreq[c] || 0) + 1;
+      });
+      let sumF2 = 0;
+      Object.entries(vFreq).forEach(([f, vf]) => { sumF2 += Number(f) * Number(f) * vf; });
+      const yuleK = total > 1 ? Math.max(0, 10000 * (sumF2 - total) / (total * total)) : 0;
+      const syllables = words.reduce((acc, w) => acc + countSyllables(w), 0);
+      const fk = 0.39 * mean + 11.8 * (syllables / total) - 15.59;
+
+      document.getElementById('kpiSd').textContent = sd.toFixed(2);
+      document.getElementById('kpiCv').textContent = cv.toFixed(2);
+      document.getElementById('kpiEntropy').textContent = entropy.toFixed(2);
+      document.getElementById('kpiYule').textContent = yuleK.toFixed(1);
+      document.getElementById('kpiFk').textContent = fk.toFixed(1);
+      document.getElementById('kpiBand').textContent = cv >= 0.40 ? 'High Burstiness' : (cv >= 0.24 ? 'Moderate' : 'Uniform / Flat');
+
+      const barsEl = document.getElementById('sentenceBars');
+      barsEl.innerHTML = '';
+      lengths.slice(0, 8).forEach((len, idx) => {
+        const pct = Math.min(100, Math.round((len / 38) * 100));
+        const row = document.createElement('div');
+        row.className = 'bar-row';
+        row.innerHTML = '<span style="width:38px;color:#94a3b8;">S' + (idx + 1) + '</span>' +
+          '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+          '<span style="width:46px;text-align:right;">' + len + 'w</span>';
+        barsEl.appendChild(row);
+      });
+    }
+    function flattenObj(obj, prefix = '', res = {}) {
+      for (const [k, v] of Object.entries(obj || {})) {
+        const key = prefix ? prefix + '.' + k : k;
+        if (v !== null && typeof v === 'object' && !Array.isArray(v)) flattenObj(v, key, res);
+        else res[key] = Array.isArray(v) ? JSON.stringify(v) : String(v ?? '');
+      }
+      return res;
+    }
+    function convertJsonCsv() {
+      try {
+        const parsed = JSON.parse(document.getElementById('jsonInput').value);
+        const arr = Array.isArray(parsed) ? parsed : [parsed];
+        const flat = arr.map(r => flattenObj(r));
+        const headers = Array.from(new Set(flat.flatMap(r => Object.keys(r))));
+        const esc = s => /[",\n]/.test(s) ? '"' + String(s).replace(/"/g, '""') + '"' : String(s);
+        const lines = [headers.map(esc).join(',')];
+        flat.forEach(r => lines.push(headers.map(h => esc(r[h] ?? '')).join(',')));
+        document.getElementById('csvOutput').value = lines.join('\n');
+      } catch (e) {
+        document.getElementById('csvOutput').value = 'Invalid JSON: ' + e.message;
+      }
+    }
+    function calcCgpa() {
+      const cgpa = parseFloat(document.getElementById('cgpaVal').value) || 0;
+      const scale = document.getElementById('cgpaScale').value;
+      const pct = scale === 'aicte' ? Math.max(0, (cgpa - 0.75) * 10) : cgpa * parseFloat(scale);
+      const clamped = Math.min(100, Math.max(0, pct));
+      const gpa4 = (clamped / 100) * 4.0;
+      document.getElementById('cgpaResult').textContent = clamped.toFixed(2) + '% | ' + gpa4.toFixed(2) + ' GPA';
+    }
+    document.getElementById('inputText').addEventListener('input', analyze);
+    analyze();
+    convertJsonCsv();
+    calcCgpa();
+  </script>
+</body>
+</html>
